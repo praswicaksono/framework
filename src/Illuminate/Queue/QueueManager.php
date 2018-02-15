@@ -136,9 +136,10 @@ class QueueManager extends Manager implements FactoryContract, MonitorContract
 
     /**
      * @param null $driver
+     * @param array|null $config
      * @return \Illuminate\Contracts\Queue\Queue|mixed
      */
-    public function driver($driver = null)
+    public function driver($driver = null, array $config = null)
     {
         return $this->resolve($driver);
     }
