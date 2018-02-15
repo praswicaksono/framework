@@ -36,7 +36,7 @@ class FilesystemManager extends Manager implements FactoryContract
      *
      * @var array
      */
-    protected $disks = [];
+    protected $drivers = [];
 
     /**
      * The registered custom driver creators.
@@ -77,7 +77,7 @@ class FilesystemManager extends Manager implements FactoryContract
     {
         $name = $name ?: $this->getDefaultDriver();
 
-        return $this->disks[$name] = $this->get($name);
+        return $this->drivers[$name] = $this->get($name);
     }
 
     /**
@@ -89,7 +89,17 @@ class FilesystemManager extends Manager implements FactoryContract
     {
         $name = $this->getDefaultCloudDriver();
 
-        return $this->disks[$name] = $this->get($name);
+        return $this->drivers[$name] = $this->get($name);
+    }
+
+    /**
+     * @param null $driver
+     * @param array|null $config
+     * @return \Illuminate\Contracts\Filesystem\Filesystem|mixed
+     */
+    public function driver($driver = null, array $config = null)
+    {
+        return $this->disk($driver);
     }
 
     /**
@@ -100,7 +110,7 @@ class FilesystemManager extends Manager implements FactoryContract
      */
     protected function get($name)
     {
-        return $this->disks[$name] ?? $this->createDriver($name, $this->getConfig($name));
+        return $this->drivers[$name] ?? $this->createDriver($name, $this->getConfig($name));
     }
 
     /**
@@ -267,7 +277,7 @@ class FilesystemManager extends Manager implements FactoryContract
      */
     public function set($name, $disk)
     {
-        $this->disks[$name] = $disk;
+        $this->drivers[$name] = $disk;
     }
 
     /**

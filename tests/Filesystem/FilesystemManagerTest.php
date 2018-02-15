@@ -24,7 +24,7 @@ class FilesystemManagerTest extends TestCase
     /**
      * @test
      */
-    public function testCreateLocalDriver()
+    public function testCreateLocalDriverViaDisk()
     {
         $this->app['config'] = [
             'filesystems.disks.local' => [
@@ -35,6 +35,24 @@ class FilesystemManagerTest extends TestCase
         $manager = new FilesystemManager($this->app);
 
         $driver = $manager->disk('local');
+
+        $this->assertInstanceOf(FilesystemAdapter::class, $driver);
+    }
+
+    /**
+     * @test
+     */
+    public function testCreateLocalDriverViaDriver()
+    {
+        $this->app['config'] = [
+            'filesystems.disks.local' => [
+                'root' => '.'
+            ]
+        ];
+
+        $manager = new FilesystemManager($this->app);
+
+        $driver = $manager->driver('local');
 
         $this->assertInstanceOf(FilesystemAdapter::class, $driver);
     }
