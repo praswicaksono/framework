@@ -85,7 +85,7 @@ abstract class Manager
         // will check for a custom driver creator, which allows developers to create
         // drivers using their own customized driver creator Closure to create it.
         if (isset($this->customCreators[$driver])) {
-            return $this->callCustomCreator($driver);
+            return is_null($config) ? $this->callCustomCreator($driver) : $this->callCustomCreator($driver, $config);
         } else {
             $method = 'create'.Str::studly($driver).'Driver';
 
