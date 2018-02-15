@@ -3,6 +3,8 @@
 namespace Illuminate\Queue;
 
 use Closure;
+use Illuminate\Queue\Connectors\ConnectorInterface;
+use Illuminate\Support\Manager;
 use InvalidArgumentException;
 use Illuminate\Contracts\Queue\Factory as FactoryContract;
 use Illuminate\Contracts\Queue\Monitor as MonitorContract;
@@ -10,7 +12,7 @@ use Illuminate\Contracts\Queue\Monitor as MonitorContract;
 /**
  * @mixin \Illuminate\Contracts\Queue\Queue
  */
-class QueueManager implements FactoryContract, MonitorContract
+class QueueManager extends Manager implements FactoryContract, MonitorContract
 {
     /**
      * The application instance.
@@ -31,7 +33,7 @@ class QueueManager implements FactoryContract, MonitorContract
      *
      * @var array
      */
-    protected $connectors = [];
+    protected $customCreators = [];
 
     /**
      * Create a new queue manager instance.
@@ -129,18 +131,16 @@ class QueueManager implements FactoryContract, MonitorContract
      */
     public function connection($name = null)
     {
-        $name = $name ?: $this->getDefaultDriver();
+        return $this->resolve($name);
+    }
 
-        // If the connection has not been resolved yet we will resolve it now as all
-        // of the connections are resolved when they are actually needed so we do
-        // not make any unnecessary connection to the various queue end-points.
-        if (! isset($this->connections[$name])) {
-            $this->connections[$name] = $this->resolve($name);
-
-            $this->connections[$name]->setContainer($this->app);
-        }
-
-        return $this->connections[$name];
+    /**
+     * @param null $driver
+     * @return \Illuminate\Contracts\Queue\Queue|mixed
+     */
+    public function driver($driver = null)
+    {
+        return $this->resolve($driver);
     }
 
     /**
@@ -151,28 +151,30 @@ class QueueManager implements FactoryContract, MonitorContract
      */
     protected function resolve($name)
     {
-        $config = $this->getConfig($name);
+        $name = $name ?: $this->getDefaultDriver();
+        // If the connection has not been resolved yet we will resolve it now as all
+        // of the connections are resolved when they are actually needed so we do
+        // not make any unnecessary connection to the various queue end-points.
+        if (! isset($this->connections[$name])) {
+            $this->connections[$name] = $this->createDriver($name, $this->getConfig($name));
 
-        return $this->getConnector($config['driver'])
-                        ->connect($config)
-                        ->setConnectionName($name);
+            $this->connections[$name]->setContainer($this->app);
+        }
+
+        return $this->connections[$name];
     }
 
     /**
-     * Get the connector for a given driver.
-     *
-     * @param  string  $driver
-     * @return \Illuminate\Queue\Connectors\ConnectorInterface
-     *
-     * @throws \InvalidArgumentException
+     * @param string $driver
+     * @param array|null $config
+     * @return \Illuminate\Contracts\Queue\Queue
      */
-    protected function getConnector($driver)
+    protected function createDriver($driver, array $config = null)
     {
-        if (! isset($this->connectors[$driver])) {
-            throw new InvalidArgumentException("No connector for [$driver]");
-        }
+        /** @var ConnectorInterface $driver */
+        $connector = parent::createDriver($config['driver']);
 
-        return call_user_func($this->connectors[$driver]);
+        return $connector->connect($config)->setConnectionName($driver);
     }
 
     /**
@@ -184,7 +186,7 @@ class QueueManager implements FactoryContract, MonitorContract
      */
     public function extend($driver, Closure $resolver)
     {
-        return $this->addConnector($driver, $resolver);
+        $this->addConnector($driver, $resolver);
     }
 
     /**
@@ -196,7 +198,7 @@ class QueueManager implements FactoryContract, MonitorContract
      */
     public function addConnector($driver, Closure $resolver)
     {
-        $this->connectors[$driver] = $resolver;
+        $this->customCreators[$driver] = $resolver;
     }
 
     /**
