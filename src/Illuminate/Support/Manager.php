@@ -74,11 +74,12 @@ abstract class Manager
      * Create a new driver instance.
      *
      * @param  string  $driver
+     * @param  array  $config
      * @return mixed
      *
      * @throws \InvalidArgumentException
      */
-    protected function createDriver($driver)
+    protected function createDriver($driver, array $config = null)
     {
         // We'll check to see if a creator method exists for the given driver. If not we
         // will check for a custom driver creator, which allows developers to create
@@ -89,7 +90,7 @@ abstract class Manager
             $method = 'create'.Str::studly($driver).'Driver';
 
             if (method_exists($this, $method)) {
-                return $this->$method();
+                return (is_null($config)) ? $this->$method() : $this->$method($config);
             }
         }
         throw new InvalidArgumentException("Driver [$driver] not supported.");
@@ -99,11 +100,14 @@ abstract class Manager
      * Call a custom driver creator.
      *
      * @param  string  $driver
+     * @param  array   $config
      * @return mixed
      */
-    protected function callCustomCreator($driver)
+    protected function callCustomCreator($driver, array $config = null)
     {
-        return $this->customCreators[$driver]($this->app);
+        return (is_null($config))
+            ? $this->customCreators[$driver]($this->app)
+            : $this->customCreators[$driver]($this->app, $config);
     }
 
     /**
