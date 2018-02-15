@@ -53,25 +53,7 @@ abstract class Manager
      * @param  array   $config
      * @return mixed
      */
-    public function driver($driver = null, array $config = null)
-    {
-        $driver = $driver ?: $this->getDefaultDriver();
-
-        if (is_null($driver)) {
-            throw new InvalidArgumentException('Unable to resolve NULL driver for ['.get_class($this).'].');
-        }
-
-        // If the given driver has not been created before, we will create the instances
-        // here and cache it so we can return it next time very quickly. If there is
-        // already a driver created by this name, we'll just return that instance.
-        if (! isset($this->drivers[$driver])) {
-            $this->drivers[$driver] = (is_null($config))
-                ? $this->createDriver($driver)
-                : $this->createDriver($driver, $config);
-        }
-
-        return $this->drivers[$driver];
-    }
+    abstract public function driver($driver = null, array $config = null);
 
     /**
      * Create a new driver instance.
