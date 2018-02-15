@@ -4,6 +4,7 @@ namespace Illuminate\Filesystem;
 
 use Closure;
 use Aws\S3\S3Client;
+use Illuminate\Support\Manager;
 use OpenCloud\Rackspace;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
@@ -21,7 +22,7 @@ use Illuminate\Contracts\Filesystem\Factory as FactoryContract;
 /**
  * @mixin \Illuminate\Contracts\Filesystem\Filesystem
  */
-class FilesystemManager implements FactoryContract
+class FilesystemManager extends Manager implements FactoryContract
 {
     /**
      * The application instance.
@@ -99,49 +100,7 @@ class FilesystemManager implements FactoryContract
      */
     protected function get($name)
     {
-        return $this->disks[$name] ?? $this->resolve($name);
-    }
-
-    /**
-     * Resolve the given disk.
-     *
-     * @param  string  $name
-     * @return \Illuminate\Contracts\Filesystem\Filesystem
-     *
-     * @throws \InvalidArgumentException
-     */
-    protected function resolve($name)
-    {
-        $config = $this->getConfig($name);
-
-        if (isset($this->customCreators[$config['driver']])) {
-            return $this->callCustomCreator($config);
-        }
-
-        $driverMethod = 'create'.ucfirst($config['driver']).'Driver';
-
-        if (method_exists($this, $driverMethod)) {
-            return $this->{$driverMethod}($config);
-        } else {
-            throw new InvalidArgumentException("Driver [{$config['driver']}] is not supported.");
-        }
-    }
-
-    /**
-     * Call a custom driver creator.
-     *
-     * @param  array  $config
-     * @return \Illuminate\Contracts\Filesystem\Filesystem
-     */
-    protected function callCustomCreator(array $config)
-    {
-        $driver = $this->customCreators[$config['driver']]($this->app, $config);
-
-        if ($driver instanceof FilesystemInterface) {
-            return $this->adapt($driver);
-        }
-
-        return $driver;
+        return $this->disks[$name] ?? $this->createDriver($name, $this->getConfig($name));
     }
 
     /**
