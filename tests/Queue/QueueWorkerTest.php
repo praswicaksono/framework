@@ -266,16 +266,16 @@ class InsomniacWorker extends \Illuminate\Queue\Worker
 
 class WorkerFakeManager extends \Illuminate\Queue\QueueManager
 {
-    public $connections = [];
+    public $drivers = [];
 
     public function __construct($name, $connection)
     {
-        $this->connections[$name] = $connection;
+        $this->drivers[$name] = $connection;
     }
 
     public function connection($name = null)
     {
-        return $this->connections[$name];
+        return $this->drivers[$name];
     }
 }
 

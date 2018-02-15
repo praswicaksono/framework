@@ -26,7 +26,7 @@ class QueueManager extends Manager implements FactoryContract, MonitorContract
      *
      * @var array
      */
-    protected $connections = [];
+    protected $drivers = [];
 
     /**
      * The array of resolved queue connectors.
@@ -120,7 +120,7 @@ class QueueManager extends Manager implements FactoryContract, MonitorContract
      */
     public function connected($name = null)
     {
-        return isset($this->connections[$name ?: $this->getDefaultDriver()]);
+        return isset($this->drivers[$name ?: $this->getDefaultDriver()]);
     }
 
     /**
@@ -156,13 +156,13 @@ class QueueManager extends Manager implements FactoryContract, MonitorContract
         // If the connection has not been resolved yet we will resolve it now as all
         // of the connections are resolved when they are actually needed so we do
         // not make any unnecessary connection to the various queue end-points.
-        if (! isset($this->connections[$name])) {
-            $this->connections[$name] = $this->createDriver($name, $this->getConfig($name));
+        if (! isset($this->drivers[$name])) {
+            $this->drivers[$name] = $this->createDriver($name, $this->getConfig($name));
 
-            $this->connections[$name]->setContainer($this->app);
+            $this->drivers[$name]->setContainer($this->app);
         }
 
-        return $this->connections[$name];
+        return $this->drivers[$name];
     }
 
     /**
@@ -185,21 +185,9 @@ class QueueManager extends Manager implements FactoryContract, MonitorContract
      * @param  \Closure  $resolver
      * @return void
      */
-    public function extend($driver, Closure $resolver)
-    {
-        $this->addConnector($driver, $resolver);
-    }
-
-    /**
-     * Add a queue connection resolver.
-     *
-     * @param  string    $driver
-     * @param  \Closure  $resolver
-     * @return void
-     */
     public function addConnector($driver, Closure $resolver)
     {
-        $this->customCreators[$driver] = $resolver;
+        $this->extend($driver, $resolver);
     }
 
     /**
